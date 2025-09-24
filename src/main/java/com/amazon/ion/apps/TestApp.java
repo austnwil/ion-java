@@ -2,10 +2,10 @@ package com.amazon.ion.apps;
 
 import java.nio.ByteBuffer;
 
-import com.amazon.ion.impl.bin.dense6.Dense6StringDecoder;
-import com.amazon.ion.impl.bin.dense6.Dense6StringDecoderPool;
-import com.amazon.ion.impl.bin.dense6.Dense6StringEncoder;
-import com.amazon.ion.impl.bin.dense6.Dense6StringEncoderPool;
+import com.amazon.ion.impl.bin.dense7.Dense7StringDecoder;
+import com.amazon.ion.impl.bin.dense7.Dense7StringDecoderPool;
+import com.amazon.ion.impl.bin.dense7.Dense7StringEncoder;
+import com.amazon.ion.impl.bin.dense7.Dense7StringEncoderPool;
 
 public class TestApp {
     public static void main(String[] args) {
@@ -20,10 +20,10 @@ public class TestApp {
     private static void roundTripString(String string) {
         System.out.printf("\nPre-processed string: %s\n", string);
         
-        final Dense6StringEncoder encoder = Dense6StringEncoderPool.getInstance().getOrCreate();
-        final Dense6StringDecoder decoder = Dense6StringDecoderPool.getInstance().getOrCreate();
+        final Dense7StringEncoder encoder = Dense7StringEncoderPool.getInstance().getOrCreate();
+        final Dense7StringDecoder decoder = Dense7StringDecoderPool.getInstance().getOrCreate();
 
-        final Dense6StringEncoder.Result encResult = encoder.encode(string);
+        final Dense7StringEncoder.Result encResult = encoder.encode(string);
         final int encodedByteLength = encResult.getEncodedLength();
 
         System.out.printf("Encoded string to %d bytes\n", encodedByteLength);

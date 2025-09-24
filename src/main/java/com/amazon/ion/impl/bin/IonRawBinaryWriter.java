@@ -35,8 +35,8 @@ import com.amazon.ion.SymbolToken;
 import com.amazon.ion.Timestamp;
 import com.amazon.ion.impl._Private_RecyclingQueue;
 import com.amazon.ion.impl._Private_RecyclingStack;
-import com.amazon.ion.impl.bin.dense6.Dense6StringEncoder;
-import com.amazon.ion.impl.bin.dense6.Dense6StringEncoderPool;
+import com.amazon.ion.impl.bin.dense7.Dense7StringEncoder;
+import com.amazon.ion.impl.bin.dense7.Dense7StringEncoderPool;
 import com.amazon.ion.impl.bin.utf8.Utf8StringEncoder;
 import com.amazon.ion.impl.bin.utf8.Utf8StringEncoderPool;
 
@@ -116,7 +116,7 @@ import java.util.ListIterator;
             .getInstance()
             .getOrCreate();
     
-    final Dense6StringEncoder dense6StringEncoder = Dense6StringEncoderPool
+    final Dense7StringEncoder dense7StringEncoder = Dense7StringEncoderPool
         .getInstance()
         .getOrCreate();
 
@@ -1241,7 +1241,7 @@ import java.util.ListIterator;
 
         // UTF-8 encode the String
         //Utf8StringEncoder.Result encoderResult = utf8StringEncoder.encode(value);
-        Dense6StringEncoder.Result encoderResult = dense6StringEncoder.encode(value);
+        Dense7StringEncoder.Result encoderResult = dense7StringEncoder.encode(value);
         int utf8Length = encoderResult.getEncodedLength();
         byte[] utf8Buffer = encoderResult.getBuffer();
 
@@ -1430,7 +1430,7 @@ import java.util.ListIterator;
             buffer.close();
             allocator.close();
             // utf8StringEncoder.close();
-            dense6StringEncoder.close();
+            dense7StringEncoder.close();
         }
         finally
         {

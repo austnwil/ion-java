@@ -1,4 +1,4 @@
-package com.amazon.ion.impl.bin.dense6;
+package com.amazon.ion.impl.bin.dense7;
 
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -9,14 +9,14 @@ import java.nio.charset.CoderResult;
 import com.amazon.ion.IonException;
 
 /**
- * Encodes {@link String}s to dense-6. Instances of this class are reusable but are NOT threadsafe.
+ * Encodes {@link String}s to Dense7. Instances of this class are reusable but are NOT threadsafe.
  *
- * Instances are vended by {@link Dense6StringEncoderPool#getOrCreate()}.
+ * Instances are vended by {@link Dense7StringEncoderPool#getOrCreate()}.
  *
  * {@link #encode(String)} can be called any number of times. Users are expected to call {@link #close()} when
  * the encoder is no longer needed.
  */
-public class Dense6StringEncoder extends Poolable<Dense6StringEncoder> {
+public class Dense7StringEncoder extends Poolable<Dense7StringEncoder> {
     // The longest String (as measured by {@link java.lang.String#length()}) that this instance can encode without
     // requiring additional allocations.
     private static final int SMALL_STRING_SIZE = 4 * 1024;
@@ -42,18 +42,18 @@ public class Dense6StringEncoder extends Poolable<Dense6StringEncoder> {
     private static final int ASCII_TO_DENSE7_CONTROL_WHITESPACE_OFFSET
         = DENSE7_CONTROL_WHITESPACE_START - ASCII_CONTROL_WHITESPACE_START;
 
-    // Reusable resources for encoding Strings as dense-6 bytes
-    final ByteBuffer dense6EncodingBuffer;
+    // Reusable resources for encoding Strings as Dense7 bytes
+    final ByteBuffer dense7EncodingBuffer;
     final ByteBuffer reusableIntermediateBuffer;
 
-    Dense6StringEncoder(Pool<Dense6StringEncoder> pool) {
+    Dense7StringEncoder(Pool<Dense7StringEncoder> pool) {
         super(pool);
-        dense6EncodingBuffer = ByteBuffer.allocate((int) (SMALL_STRING_SIZE * MAX_BYTES_PER_CHAR));
+        dense7EncodingBuffer = ByteBuffer.allocate((int) (SMALL_STRING_SIZE * MAX_BYTES_PER_CHAR));
         reusableIntermediateBuffer = ByteBuffer.allocate((int) (SMALL_STRING_SIZE * MAX_BYTES_PER_CHAR));
     }
 
     /**
-     * Encodes the provided String's text to dense-6. Unlike {@link String#getBytes(Charset)}, this method will not
+     * Encodes the provided String's text to Dense7. Unlike {@link String#getBytes(Charset)}, this method will not
      * silently replace characters that cannot be encoded with a substitute character. Instead, it will throw
      * an {@link IllegalArgumentException}.
      *
@@ -61,8 +61,8 @@ public class Dense6StringEncoder extends Poolable<Dense6StringEncoder> {
      * callers should use the Result and discard it immediately.
      *
      * @param text A Java String to encode as UTF8 bytes.
-     * @return  A {@link Result} containing a byte array of dense-6 bytes and encoded length.
-     * @throws IllegalArgumentException if the String cannot be encoded as dense-6.
+     * @return  A {@link Result} containing a byte array of Dense7 bytes and encoded length.
+     * @throws IllegalArgumentException if the String cannot be encoded as Dense7.
      */
     public Result encode(String text) {
         // System.out.printf("Encoding %s\n", text);
@@ -79,7 +79,7 @@ public class Dense6StringEncoder extends Poolable<Dense6StringEncoder> {
         } else {
             // Reuse our existing buffers for small strings
             // System.out.println("Small buffer will do c");
-            encodingBuffer = dense6EncodingBuffer;
+            encodingBuffer = dense7EncodingBuffer;
             encodingBuffer.clear();
             intermediateBuffer = reusableIntermediateBuffer;
             intermediateBuffer.clear();
@@ -173,13 +173,13 @@ public class Dense6StringEncoder extends Poolable<Dense6StringEncoder> {
         }
 
         encodingBuffer.flip();
-        int dense6Length = encodingBuffer.remaining();
+        int dense7Length = encodingBuffer.remaining();
 
         // System.out.printf("Just encoded a string. The input was '%s', length %d. Encoded byte length is %d. First 3 bytes in buffer are: %d %d %d. %n",
-        //     text, text.length(), dense6Length, encodingBuffer.get(), encodingBuffer.get(), encodingBuffer.get());
+        //     text, text.length(), dense7Length, encodingBuffer.get(), encodingBuffer.get(), encodingBuffer.get());
 
         // In most usages, the JVM should be able to eliminate this allocation via an escape analysis of the caller.
-        return new Result(dense6Length, encodingBuffer.array());
+        return new Result(dense7Length, encodingBuffer.array());
     }
 
     private static final boolean isCharAsciiPrintable(char c) {
@@ -207,7 +207,7 @@ public class Dense6StringEncoder extends Poolable<Dense6StringEncoder> {
     }
 
     /**
-     * Represents the result of a {@link Dense6StringEncoder#encode(String)} operation.
+     * Represents the result of a {@link Dense7StringEncoder#encode(String)} operation.
      */
     public static class Result {
         final private byte[] buffer;
@@ -219,11 +219,11 @@ public class Dense6StringEncoder extends Poolable<Dense6StringEncoder> {
         }
 
         /**
-         * Returns a byte array containing the encoded dense-6 bytes starting at index 0. This byte array is NOT
+         * Returns a byte array containing the encoded Dense7 bytes starting at index 0. This byte array is NOT
          * guaranteed to be the same length as the data it contains. Callers must use {@link #getEncodedLength()}
          * to determine the number of bytes that should be read from the byte array.
          *
-         * @return the buffer containing dense-6 bytes.
+         * @return the buffer containing Dense7 bytes.
          */
         public byte[] getBuffer() {
             return buffer;

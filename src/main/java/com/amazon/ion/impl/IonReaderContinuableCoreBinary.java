@@ -9,8 +9,8 @@ import com.amazon.ion.IonException;
 import com.amazon.ion.IonType;
 import com.amazon.ion.Timestamp;
 import com.amazon.ion.impl.bin.IntList;
-import com.amazon.ion.impl.bin.dense6.Dense6StringDecoder;
-import com.amazon.ion.impl.bin.dense6.Dense6StringDecoderPool;
+import com.amazon.ion.impl.bin.dense7.Dense7StringDecoder;
+import com.amazon.ion.impl.bin.dense7.Dense7StringDecoderPool;
 import com.amazon.ion.impl.bin.utf8.Utf8StringDecoder;
 import com.amazon.ion.impl.bin.utf8.Utf8StringDecoderPool;
 
@@ -73,7 +73,7 @@ class IonReaderContinuableCoreBinary extends IonCursorBinary implements IonReade
     // Java `long` via `IonReader.longValue()`.
     private final _Private_ScalarConversions.ValueVariant scalarConverter;
 
-    final Dense6StringDecoder utf8Decoder = Dense6StringDecoderPool.getInstance().getOrCreate();
+    final Dense7StringDecoder utf8Decoder = Dense7StringDecoderPool.getInstance().getOrCreate();
     // final Utf8StringDecoder utf8Decoder = Utf8StringDecoderPool.getInstance().getOrCreate();
 
     long peekIndex = -1;

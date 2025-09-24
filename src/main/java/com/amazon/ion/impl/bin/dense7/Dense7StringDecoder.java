@@ -1,4 +1,4 @@
-package com.amazon.ion.impl.bin.dense6;
+package com.amazon.ion.impl.bin.dense7;
 
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -8,7 +8,7 @@ import com.amazon.ion.IonException;
 /**
  * Decodes {@link String}s from UTF-8. Instances of this class are reusable but are NOT threadsafe.
  *
- * Instances are vended by {@link Dense6StringDecoderPool#getOrCreate()}.
+ * Instances are vended by {@link Dense7StringDecoderPool#getOrCreate()}.
  *
  * Users are expected to call {@link #close()} when the decoder is no longer needed.
  *
@@ -28,7 +28,7 @@ import com.amazon.ion.IonException;
  *     </li>
  * </ol>
  */
-public class Dense6StringDecoder extends Poolable<Dense6StringDecoder> {
+public class Dense7StringDecoder extends Poolable<Dense7StringDecoder> {
 
     private static final int ISOLATE_HIGH_BYTE = 0b100_0000;
     private static final int ISOLATE_HIGH_2    = 0b110_0000;
@@ -49,10 +49,10 @@ public class Dense6StringDecoder extends Poolable<Dense6StringDecoder> {
         = DENSE7_CONTROL_WHITESPACE_START - ASCII_CONTROL_WHITESPACE_START;
 
     // The size of the UTF-8 decoding buffer.
-    private static final int DENSE6_BUFFER_SIZE_IN_BYTES = 4 * 8192;
+    private static final int DENSE7_BUFFER_SIZE_IN_BYTES = 4 * 8192;
 
-    private final CharBuffer reusableDense6DecodingBuffer;
-    private CharBuffer dense6DecodingBuffer;
+    private final CharBuffer reusableDense7DecodingBuffer;
+    private CharBuffer dense7DecodingBuffer;
 
     // The 
     private int byteStage;
@@ -60,9 +60,9 @@ public class Dense6StringDecoder extends Poolable<Dense6StringDecoder> {
     private int inProgressCodePoint;
     private int continuationBytesRemaining;
 
-    Dense6StringDecoder(Pool<Dense6StringDecoder> pool) {
+    Dense7StringDecoder(Pool<Dense7StringDecoder> pool) {
         super(pool);
-        reusableDense6DecodingBuffer = CharBuffer.allocate(DENSE6_BUFFER_SIZE_IN_BYTES);
+        reusableDense7DecodingBuffer = CharBuffer.allocate(DENSE7_BUFFER_SIZE_IN_BYTES);
         byteStage = 1;
         packedCodeUnit = 0;
         inProgressCodePoint = 0;
@@ -74,24 +74,25 @@ public class Dense6StringDecoder extends Poolable<Dense6StringDecoder> {
      * @param numberOfBytes the number of bytes to decode.
      */
     public void prepareDecode(int numberOfBytes) {
-        dense6DecodingBuffer = reusableDense6DecodingBuffer;
+        dense7DecodingBuffer = reusableDense7DecodingBuffer;
         // TODO: quick fix with *2
-        if (numberOfBytes * 2 > reusableDense6DecodingBuffer.capacity()) {
-            dense6DecodingBuffer = CharBuffer.allocate(numberOfBytes * 2);
+        if (numberOfBytes * 2 > reusableDense7DecodingBuffer.capacity()) {
+            dense7DecodingBuffer = CharBuffer.allocate(numberOfBytes * 2);
         }
     }
 
     /**
      * Decodes the available bytes from the given ByteBuffer.
-     * @param dense6InputBuffer a ByteBuffer containing UTF-8 bytes.
+     * @param dense7InputBuffer a ByteBuffer containing UTF-8 bytes.
      * @param endOfInput true if the end of the UTF-8 sequence is expected to occur in the buffer; otherwise, false.
      */
-    public void partialDecode(ByteBuffer dense6InputBuffer, boolean endOfInput) {
-        // System.out.println("Decoding " + dense6InputBuffer.remaining() + " bytes.");
-        final int limit = dense6InputBuffer.remaining();
-        final byte[] array = dense6InputBuffer.array();
-        for(int i = dense6InputBuffer.arrayOffset() + dense6InputBuffer.position(); i < limit; i++) {
-            final byte nextByte = array[i];// dense6InputBuffer.get();
+    public void partialDecode(ByteBuffer dense7InputBuffer, boolean endOfInput) {
+        // System.out.println("Decoding " + dense7InputBuffer.remaining() + " bytes.");
+        final byte[] array = dense7InputBuffer.array();
+        final int start = dense7InputBuffer.arrayOffset() + dense7InputBuffer.position();
+        final int end = start + dense7InputBuffer.remaining();
+        for(int i = start; i < end; i++) {
+            final byte nextByte = array[i];// dense7InputBuffer.get();
             
             packedCodeUnit |= (nextByte & 0b10_00_00_00) >>> byteStage;
             byteStage++;
@@ -117,12 +118,12 @@ public class Dense6StringDecoder extends Poolable<Dense6StringDecoder> {
                 // System.out.printf(" (decoded to %c)", (char) inProgressCodePoint);
                 // System.out.printf("Got a supplementary code point %x\n", inProgressCodePoint);
                 final char[] chars = Character.toChars(inProgressCodePoint);
-                dense6DecodingBuffer.put(chars[0]);
+                dense7DecodingBuffer.put(chars[0]);
                 if(chars.length > 1) {
-                    dense6DecodingBuffer.put(chars[1]);
+                    dense7DecodingBuffer.put(chars[1]);
                 }
-                // dense6DecodingBuffer.put((char) Character.highSurrogate(inProgressCodePoint));
-                // dense6DecodingBuffer.put((char) Character.lowSurrogate (inProgressCodePoint));
+                // dense7DecodingBuffer.put((char) Character.highSurrogate(inProgressCodePoint));
+                // dense7DecodingBuffer.put((char) Character.lowSurrogate (inProgressCodePoint));
                 inProgressCodePoint = 0;
             }
             
@@ -132,11 +133,11 @@ public class Dense6StringDecoder extends Poolable<Dense6StringDecoder> {
 
         if      (isD7AsciiEquivalent(cu)) {
             // System.out.printf("D7 ASCII: %c\n", (char) cu);
-            dense6DecodingBuffer.put((char) cu);
+            dense7DecodingBuffer.put((char) cu);
         }
         else if (isD7ControlWhitespace(cu)) {
             // System.out.printf("D7 control WS: %c\n", (char) (cu - ASCII_TO_DENSE7_CONTROL_WHITESPACE_OFFSET));
-            dense6DecodingBuffer.put((char) (cu - ASCII_TO_DENSE7_CONTROL_WHITESPACE_OFFSET));
+            dense7DecodingBuffer.put((char) (cu - ASCII_TO_DENSE7_CONTROL_WHITESPACE_OFFSET));
         }
         else if (isD7StartOf2ByteCodePoint(cu)) {
             // System.out.printf("D7 2 byte start\n");
@@ -154,15 +155,15 @@ public class Dense6StringDecoder extends Poolable<Dense6StringDecoder> {
         }
         else if (cu == 0b111_1111) {
             // System.out.printf("D7 null\n");
-            dense6DecodingBuffer.put('\0');
+            dense7DecodingBuffer.put('\0');
         }
         else if (cu == 0b001_1111) {
             // System.out.printf("D7 u+0007\n");
-            dense6DecodingBuffer.put('\u0007');
+            dense7DecodingBuffer.put('\u0007');
         }
         else if (cu == 0b001_1110) {
             // System.out.printf("D7 u+0008\n");
-            dense6DecodingBuffer.put('\u0008');
+            dense7DecodingBuffer.put('\u0008');
         }
         else {
             throw new IonException(String.format("Cannot handle byte %x.", cu));
@@ -178,8 +179,8 @@ public class Dense6StringDecoder extends Poolable<Dense6StringDecoder> {
         packedCodeUnit = 0;
         inProgressCodePoint = 0;
         continuationBytesRemaining = 0;
-        dense6DecodingBuffer.flip();
-        return dense6DecodingBuffer.toString();
+        dense7DecodingBuffer.flip();
+        return dense7DecodingBuffer.toString();
     }
 
     private static final boolean isD7AsciiEquivalent(byte b) {
@@ -204,17 +205,17 @@ public class Dense6StringDecoder extends Poolable<Dense6StringDecoder> {
 
     /**
      * Decodes the given number of UTF-8 bytes from the given ByteBuffer into a Java String.
-     * @param dense6InputBuffer a ByteBuffer containing UTF-8 bytes.
+     * @param dense7InputBuffer a ByteBuffer containing UTF-8 bytes.
      * @param numberOfBytes the number of bytes from the utf8InputBuffer to decode.
      * @return the decoded Java String.
      */
-    public String decode(ByteBuffer dense6InputBuffer, int numberOfBytes) {        
+    public String decode(ByteBuffer dense7InputBuffer, int numberOfBytes) {        
         prepareDecode(numberOfBytes);
 
-        dense6DecodingBuffer.position(0);
-        dense6DecodingBuffer.limit(dense6DecodingBuffer.capacity());
+        dense7DecodingBuffer.position(0);
+        dense7DecodingBuffer.limit(dense7DecodingBuffer.capacity());
 
-        partialDecode(dense6InputBuffer, true);
+        partialDecode(dense7InputBuffer, true);
         return finishDecode();
     }
 }

@@ -1,4 +1,4 @@
-package com.amazon.ion.impl.bin.dense6;
+package com.amazon.ion.impl.bin.dense7;
 
 /**
  * A thread-safe shared pool of {@link PoolableByteBuffer}s.
