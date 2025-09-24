@@ -35,6 +35,8 @@ import com.amazon.ion.SymbolToken;
 import com.amazon.ion.Timestamp;
 import com.amazon.ion.impl._Private_RecyclingQueue;
 import com.amazon.ion.impl._Private_RecyclingStack;
+import com.amazon.ion.impl.bin.dense6.Dense6StringEncoder;
+import com.amazon.ion.impl.bin.dense6.Dense6StringEncoderPool;
 import com.amazon.ion.impl.bin.utf8.Utf8StringEncoder;
 import com.amazon.ion.impl.bin.utf8.Utf8StringEncoderPool;
 
@@ -113,6 +115,10 @@ import java.util.ListIterator;
     final Utf8StringEncoder utf8StringEncoder = Utf8StringEncoderPool
             .getInstance()
             .getOrCreate();
+    
+    final Dense6StringEncoder dense6StringEncoder = Dense6StringEncoderPool
+        .getInstance()
+        .getOrCreate();
 
     private static final byte[] makeTypedPreallocatedBytes(final int typeDesc, final int length)
     {
@@ -1234,7 +1240,8 @@ import java.util.ListIterator;
         prepareValue();
 
         // UTF-8 encode the String
-        Utf8StringEncoder.Result encoderResult = utf8StringEncoder.encode(value);
+        //Utf8StringEncoder.Result encoderResult = utf8StringEncoder.encode(value);
+        Dense6StringEncoder.Result encoderResult = dense6StringEncoder.encode(value);
         int utf8Length = encoderResult.getEncodedLength();
         byte[] utf8Buffer = encoderResult.getBuffer();
 
@@ -1422,7 +1429,8 @@ import java.util.ListIterator;
             // release all of our blocks -- these should never throw
             buffer.close();
             allocator.close();
-            utf8StringEncoder.close();
+            // utf8StringEncoder.close();
+            dense6StringEncoder.close();
         }
         finally
         {

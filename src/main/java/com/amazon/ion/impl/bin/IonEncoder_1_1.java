@@ -5,9 +5,8 @@ package com.amazon.ion.impl.bin;
 import com.amazon.ion.Decimal;
 import com.amazon.ion.IonType;
 import com.amazon.ion.Timestamp;
-import com.amazon.ion.impl.bin.utf8.Utf8StringEncoder;
-import com.amazon.ion.impl.bin.utf8.Utf8StringEncoderPool;
-
+import com.amazon.ion.impl.bin.dense6.Dense6StringEncoder;
+import com.amazon.ion.impl.bin.dense6.Dense6StringEncoderPool;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
@@ -455,7 +454,7 @@ public class IonEncoder_1_1 {
 
         // TODO: When merging into the Ion 1.1 raw writer, keep a single instance of the Utf8StringEncoder
         //       instead of fetching one on every call.
-        Utf8StringEncoder.Result encoderResult = Utf8StringEncoderPool.getInstance().getOrCreate().encode(value);
+        Dense6StringEncoder.Result encoderResult = Dense6StringEncoderPool.getInstance().getOrCreate().encode(value);
 
         byte[] utf8Buffer = encoderResult.getBuffer();
         int numValueBytes = encoderResult.getEncodedLength();
