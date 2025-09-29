@@ -2,26 +2,13 @@ package com.amazon.ion.impl;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.ListIterator;
-import java.util.NoSuchElementException;
 
 /**
  * A stack whose elements are recycled. This can be useful when the stack needs to grow and shrink
  * frequently and has a predictable maximum depth.
  * @param <T> the type of elements stored.
  */
-public final class _Private_RecyclingStack<T> implements Iterable<T> {
-    public  $Iterator stackIterator;
-    @Override
-    public ListIterator<T> iterator() {
-        if (stackIterator != null) {
-            stackIterator.cursor = _Private_RecyclingStack.this.currentIndex;
-        } else {
-            stackIterator = new $Iterator();
-        }
-        return stackIterator;
-    }
-
+public final class _Private_RecyclingStack<T> {
     /**
      * Factory for new stack elements.
      * @param <T> the type of element.
@@ -101,6 +88,17 @@ public final class _Private_RecyclingStack<T> implements Iterable<T> {
     }
 
     /**
+     * @return the element at the given index in the stack, or null if the stack is empty.
+     */
+    public T get(int index) {
+        if (currentIndex >= 0) {
+            return elements.get(index);
+        } else {
+            return null;
+        }
+    }
+
+    /**
      * @return true if the stack is empty; otherwise, false.
      */
     public boolean isEmpty() {
@@ -113,62 +111,4 @@ public final class _Private_RecyclingStack<T> implements Iterable<T> {
     public int size() {
         return currentIndex + 1;
     }
-
-    private class $Iterator implements ListIterator<T> {
-        private int cursor;
-
-        @Override
-        public boolean hasNext() {
-            return cursor >= 0;
-        }
-
-        @Override
-        public T next() {
-            if (!hasNext()) {
-                throw new NoSuchElementException();
-            }
-            // post-decrement because "next" is where the cursor is
-            return _Private_RecyclingStack.this.elements.get(cursor--);
-        }
-
-        @Override
-        public boolean hasPrevious() {
-            return cursor + 1 <= _Private_RecyclingStack.this.currentIndex;
-        }
-
-        @Override
-        public T previous() {
-            if (!hasPrevious()) {
-                throw new NoSuchElementException();
-            }
-            // pre-increment: "next" is where the cursor is, so "previous" is upward in stack
-            return _Private_RecyclingStack.this.elements.get(++cursor);
-        }
-
-        @Override
-        public int nextIndex() {
-            return cursor;
-        }
-
-        @Override
-        public int previousIndex() {
-            return cursor + 1;
-        }
-
-        @Override
-        public void remove() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void set(T t) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void add(T t) {
-            throw new UnsupportedOperationException();
-        }
-    }
-
 }

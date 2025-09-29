@@ -584,18 +584,18 @@ import java.util.NoSuchElementException;
     {
         // If we're adding a patch point we first need to ensure that all of our ancestors (containing values) already
         // have a patch point. No container can be smaller than the contents, so all outer layers also require patches.
-        // Instead of allocating iterator, we share one iterator instance within the scope of the container stack and reset the cursor every time we track back to the ancestors.
-        ListIterator<ContainerInfo> stackIterator = containers.iterator();
-        // Walk down the stack until we find an ancestor which already has a patch point
-        while (stackIterator.hasNext() && stackIterator.next().patchIndex == -1);
-
+        final int stackSize = containers.size();
+        int stackIndex;
+        for(stackIndex = stackSize - 1; stackIndex >= 0; stackIndex--) {
+            final ContainerInfo parent = containers.get(stackIndex);
+            if(parent.patchIndex != -1) {
+                break;
+            }
+        }
         // The iterator cursor is now positioned on an ancestor container that has a patch point
         // Ascend back up the stack, fixing the ancestors which need a patch point assigned before us
-        while (stackIterator.hasPrevious()) {
-            ContainerInfo ancestor = stackIterator.previous();
-            if (ancestor.patchIndex == -1) {
-                ancestor.patchIndex = patchPoints.push(PatchPoint::clear);
-            }
+        for(int i = stackIndex + 1; i < stackSize; i++) {
+            containers.get(i).patchIndex = patchPoints.push(PatchPoint::clear);
         }
 
         // record the size of the length data.
