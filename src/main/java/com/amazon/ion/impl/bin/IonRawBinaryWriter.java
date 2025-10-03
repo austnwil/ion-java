@@ -40,7 +40,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * Low-level binary {@link IonWriter} that understands encoding concerns but doesn't operate with any sense of symbol table management.
@@ -260,11 +260,11 @@ import java.util.ArrayList;
          * but the patch point object itself was not constructed until now.
          */
         private void setPatchPointData(final long oldPosition, final int oldLength, final long length) {
-            final PatchPoint existingPatchPoint = patchPoints.get(patchIndex);
+            final PatchPoint existingPatchPoint = patchPoints[patchIndex];
             if (existingPatchPoint != null) {
                 existingPatchPoint.initialize(oldPosition, oldLength, length);
             } else {
-                patchPoints.set(patchIndex, new PatchPoint().initialize(oldPosition, oldLength, length));
+                patchPoints[patchIndex] = new PatchPoint().initialize(oldPosition, oldLength, length);
             }
         }
 
@@ -274,19 +274,16 @@ import java.util.ArrayList;
                 // We have no assigned patch point, we need to make our own
                 patchPointsLength++;
                 patchIndex = patchPointsLength - 1;
-                if (patchIndex < patchPoints.size()) {
-                    // The patch point ArrayList is large enough, the index of this patch point is in bounds.
+                if (patchIndex < patchPoints.length) {
+                    // The patch point array is large enough, the index of this patch point is in bounds.
                     // A stale reusable patch point instance may be waiting for us here, or this may be a null slot.
                     setPatchPointData(oldPosition, oldLength, length);
                 } else {
-                    // The patch point ArrayList is not large enough. It needs to grow to accomodate this
+                    // The patch point array is not large enough. It needs to grow to accomodate this
                     // patch point. No need to call setPatchPointData since we know the PatchPoint instance
                     // is missing.
-                    patchPoints.ensureCapacity(patchPointsLength);
-                    for (int i = patchPoints.size(); i < patchPointsLength - 1; i++) {
-                        patchPoints.add(null);
-                    }
-                    patchPoints.add(new PatchPoint().initialize(oldPosition, oldLength, length));
+                    patchPoints = Arrays.copyOf(patchPoints, patchPointsLength);
+                    patchPoints[patchIndex] = new PatchPoint().initialize(oldPosition, oldLength, length);
                 }                
             } else {
                 // We have an assigned patch point already, but we need to overwrite it with the correct data
@@ -364,16 +361,14 @@ import java.util.ArrayList;
     private final PreallocationMode             preallocationMode;
     private final boolean                       isFloatBinary32Enabled;
     private final WriteBuffer                   buffer;
-    private final ArrayList<PatchPoint> patchPoints;
+    private PatchPoint[] patchPoints;
     /** The length of the patch point queue. Some elements in the queue may be null or not yet have the correct data. */
     private int patchPointsLength;
-    private final ArrayList<ContainerInfo> containers;
+    private ContainerInfo[] containers;
     /**
      * The index in {@link #containers} of the element at the top of the stack, or -1 if the stack is empty.
      * Always one less than the length of the stack itself. */
     private int containerIndex;
-    /** The container at the top of the container stack, or null if the container stack is empty */
-    private ContainerInfo topContainer;
     private int                                 depth;
     private boolean                             hasWrittenValuesSinceFinished;
     private boolean                             hasWrittenValuesSinceConstructed;
@@ -420,11 +415,10 @@ import java.util.ArrayList;
         this.preallocationMode = preallocationMode;
         this.isFloatBinary32Enabled = isFloatBinary32Enabled;
         this.buffer            = new WriteBuffer(allocator, this::endOfBlockSizeReached);
-        this.patchPoints       = new ArrayList<>(512);
+        this.patchPoints       = new PatchPoint[512];
         this.patchPointsLength = 0;
-        this.containers        = new ArrayList<>(10);
+        this.containers        = new ContainerInfo[10];
         this.containerIndex    = -1;
-        this.topContainer      = null;
         this.depth                            = 0;
         this.hasWrittenValuesSinceFinished    = false;
         this.hasWrittenValuesSinceConstructed = false;
@@ -586,20 +580,26 @@ import java.util.ArrayList;
             return;
         }
 
-        topContainer.length += length;
+        containers[containerIndex].length += length;
     }
 
     private void pushContainer(final ContainerType type)
     {
         // XXX we push before writing the type of container
         containerIndex++;
-        final ContainerInfo existingElement = containerIndex > -1 && containerIndex < containers.size() ? containers.get(containerIndex) : null;
-        if (existingElement != null) {
-            existingElement.initialize(type, buffer.position() + 1);
-            topContainer = existingElement;
+        if (containerIndex < containers.length) {
+            // The container stack array is large enough, the index of this container is in bounds.
+            // A stale reusable container instance may be waiting for us here to recycle, or this may be a null slot.
+            final ContainerInfo existingElement = containers[containerIndex];
+            if (existingElement != null) {
+                existingElement.initialize(type, buffer.position() + 1);
+            } else {
+                containers[containerIndex] = new ContainerInfo().initialize(type, buffer.position() + 1);
+            }
         } else {
-            topContainer = new ContainerInfo().initialize(type, buffer.position() + 1);
-            containers.add(topContainer);
+            // The container stack is not large enough. It needs to grow to accomodate this container.
+            containers = Arrays.copyOf(containers, containers.length * 2);
+            containers[containerIndex] = new ContainerInfo().initialize(type, buffer.position() + 1);
         }
     }
 
@@ -611,13 +611,13 @@ import java.util.ArrayList;
             int index;
             // Walk down the stack until we find an ancestor which already has a patch point
             for(index = containerIndex; index >= 0; index--) {
-                if(containers.get(index).patchIndex != -1) {
+                if(containers[index].patchIndex != -1) {
                     break;
                 }
             }
             // index is now positioned on an ancestor container that has a patch point
             for(int i = index + 1; i <= containerIndex; i++) {
-                containers.get(i).patchIndex = patchPointsLength++;
+                containers[i].patchIndex = patchPointsLength++;
             }
         }
 
@@ -629,9 +629,7 @@ import java.util.ArrayList;
 
     private ContainerInfo popContainer()
     {
-        final ContainerInfo currentContainer = topContainer;
-        containerIndex--;
-        topContainer = containerIndex > -1 ? containers.get(containerIndex) : null;
+        final ContainerInfo currentContainer = containers[containerIndex--];
         if (currentContainer == null)
         {
             throw new IllegalStateException("Tried to pop container state without said container");
@@ -764,7 +762,7 @@ import java.util.ArrayList;
     /** Closes out annotations. */
     private void finishValue() throws IOException
     {
-        if (containerIndex > -1 && topContainer.type == ContainerType.ANNOTATION)
+        if (containerIndex > -1 && containers[containerIndex].type == ContainerType.ANNOTATION)
         {
             // close out and patch the length
             popContainer();
@@ -802,7 +800,7 @@ import java.util.ArrayList;
         {
             throw new IonException("Cannot step out with field name set");
         }
-        if (containerIndex < 0 || !topContainer.type.allowedInStepOut)
+        if (containerIndex < 0 || !containers[containerIndex].type.allowedInStepOut)
         {
             throw new IonException("Cannot step out when not in container");
         }
@@ -815,7 +813,7 @@ import java.util.ArrayList;
 
     public boolean isInStruct()
     {
-        return containerIndex > -1 && topContainer.type == ContainerType.STRUCT;
+        return containerIndex > -1 && containers[containerIndex].type == ContainerType.STRUCT;
     }
 
     // Write Value Methods
@@ -1384,7 +1382,7 @@ import java.util.ArrayList;
         buffer.truncate(position);
         // TODO decide if it is worth making this faster than O(N)
         for (int i = 0; i < patchPointsLength; i++) {
-            final PatchPoint patchPoint = patchPoints.get(i);
+            final PatchPoint patchPoint = patchPoints[i];
             if (patchPoint != null && patchPoint.length > -1) {
                 if (patchPoint.oldPosition >= position) {
                     patchPointsLength = i;
@@ -1416,7 +1414,7 @@ import java.util.ArrayList;
             long bufferPosition = 0;
             for (int i = 0; i < patchPointsLength; i++)
             {
-                final PatchPoint patch = patchPoints.get(i);
+                final PatchPoint patch = patchPoints[i];
                 if (patch == null || patch.length < 0) {
                     continue;
                 }
