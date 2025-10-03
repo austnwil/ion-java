@@ -259,7 +259,8 @@ import java.util.Arrays;
          * of its ancestors are missing patch points; the parents are assigned indices into {@link #patchPoints}
          * but the patch point object itself was not constructed until now.
          */
-        private void setPatchPointData(final long oldPosition, final int oldLength, final long length) {
+        private void setPatchPointData(final long oldPosition, final int oldLength, final long length)
+        {
             final PatchPoint existingPatchPoint = patchPoints[patchIndex];
             if (existingPatchPoint != null) {
                 existingPatchPoint.initialize(oldPosition, oldLength, length);
@@ -361,14 +362,14 @@ import java.util.Arrays;
     private final PreallocationMode             preallocationMode;
     private final boolean                       isFloatBinary32Enabled;
     private final WriteBuffer                   buffer;
-    private PatchPoint[] patchPoints;
+    private PatchPoint[]                        patchPoints;
     /** The length of the patch point queue. Some elements in the queue may be null or not yet have the correct data. */
-    private int patchPointsLength;
-    private ContainerInfo[] containers;
+    private int                                 patchPointsLength;
+    private ContainerInfo[]                     containers;
     /**
      * The index in {@link #containers} of the element at the top of the stack, or -1 if the stack is empty.
      * Always one less than the length of the stack itself. */
-    private int containerIndex;
+    private int                                 containerIndex;
     private int                                 depth;
     private boolean                             hasWrittenValuesSinceFinished;
     private boolean                             hasWrittenValuesSinceConstructed;
@@ -610,13 +611,13 @@ import java.util.Arrays;
         if (containerIndex >= 0) {
             int index;
             // Walk down the stack until we find an ancestor which already has a patch point
-            for(index = containerIndex; index >= 0; index--) {
-                if(containers[index].patchIndex != -1) {
+            for (index = containerIndex; index >= 0; index--) {
+                if (containers[index].patchIndex != -1) {
                     break;
                 }
             }
             // index is now positioned on an ancestor container that has a patch point
-            for(int i = index + 1; i <= containerIndex; i++) {
+            for (int i = index + 1; i <= containerIndex; i++) {
                 containers[i].patchIndex = patchPointsLength++;
             }
         }
