@@ -99,6 +99,17 @@ internal object PrimitiveDecoder {
         }
     }
 
+    @JvmStatic
+    fun ByteArray.readFixedIntAsBigInteger(start: Int, length: Int): BigInteger {
+        // TODO: ion-java#1114
+        if (this.size < start + length) throw IonException("Incomplete data: start=$start, length=$length, limit=${this.size}")
+        val bytes = ByteArray(length)
+        for (i in 0 until length) {
+            bytes[i] = this[start + length - i - 1]
+        }
+        return BigInteger(bytes)
+    }
+
     // ==== FLEX INT AND UINT FUNCTIONS ==== //
 
     @JvmStatic

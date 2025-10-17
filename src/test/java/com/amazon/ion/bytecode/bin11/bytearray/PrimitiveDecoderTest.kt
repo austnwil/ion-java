@@ -11,6 +11,7 @@ import com.amazon.ion.bytecode.bin11.bytearray.PrimitiveDecoder.readFixedInt16As
 import com.amazon.ion.bytecode.bin11.bytearray.PrimitiveDecoder.readFixedInt24AsInt
 import com.amazon.ion.bytecode.bin11.bytearray.PrimitiveDecoder.readFixedInt32AsInt
 import com.amazon.ion.bytecode.bin11.bytearray.PrimitiveDecoder.readFixedInt8AsShort
+import com.amazon.ion.bytecode.bin11.bytearray.PrimitiveDecoder.readFixedIntAsBigInteger
 import com.amazon.ion.bytecode.bin11.bytearray.PrimitiveDecoder.readFixedIntAsInt
 import com.amazon.ion.bytecode.bin11.bytearray.PrimitiveDecoder.readFixedIntAsLong
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -205,6 +206,63 @@ class PrimitiveDecoderTest {
 
         val value = data.readFixedIntAsLong(4, length)
 
+        assertEquals(expectedValue, value)
+    }
+
+    @ParameterizedTest
+    @CsvSource(
+        "                   0, 1, 00",
+        "                   1, 1, 01",
+        "                   2, 1, 02",
+        "                   3, 1, 03",
+        "                   4, 1, 04",
+        "                   5, 1, 05",
+        "                  14, 1, 0E",
+        "                  63, 1, 0E",
+        "                  64, 1, 0E",
+        "                 127, 1, 7F",
+        "                 128, 2, 80 00",
+        "                 729, 2, D9 02",
+        "               32767, 2, FF 7F",
+        "               32768, 3, 00 80 00",
+        "             8388607, 3, FF FF 7F",
+        "             8388608, 4, 00 00 80 00",
+        "    ${Int.MAX_VALUE}, 4, FF FF FF 7F",
+        "          2147483648, 5, 00 00 00 80 00",
+        "        549755813887, 5, FF FF FF FF 7F",
+        "        549755813888, 6, 00 00 00 00 80 00",
+        "     140737488355327, 6, FF FF FF FF FF 7F",
+        "     140737488355328, 7, 00 00 00 00 00 80 00",
+        "   36028797018963967, 7, FF FF FF FF FF FF 7F",
+        "   36028797018963968, 8, 00 00 00 00 00 00 80 00",
+        "   ${Long.MAX_VALUE}, 8, FF FF FF FF FF FF FF 7F",
+        " 9223372036854775808, 9, 00 00 00 00 00 00 00 80 00",
+
+        "                  -1, 1, FF",
+        "                  -2, 1, FE",
+        "                  -3, 1, FD",
+        "                 -14, 1, F2",
+        "                -128, 1, 80",
+        "                -129, 2, 7F FF",
+        "                -729, 2, 27 FD",
+        "              -32768, 2, 00 80",
+        "              -32769, 3, FF 7F FF",
+        "            -8388608, 3, 00 00 80",
+        "            -8388609, 4, FF FF 7F FF",
+        "    ${Int.MIN_VALUE}, 4, 00 00 00 80",
+        "         -2147483649, 5, FF FF FF 7F FF",
+        "       -549755813888, 5, 00 00 00 00 80",
+        "       -549755813889, 6, FF FF FF FF 7F FF",
+        "    -140737488355328, 6, 00 00 00 00 00 80",
+        "    -140737488355329, 7, FF FF FF FF FF 7F FF",
+        "  -36028797018963968, 7, 00 00 00 00 00 00 80",
+        "  -36028797018963969, 8, FF FF FF FF FF FF 7F FF",
+        "   ${Long.MIN_VALUE}, 8, 00 00 00 00 00 00 00 80",
+        "-9223372036854775809, 9, FF FF FF FF FF FF FF 7F FF",
+    )
+    fun testReadFixedIntAsBigInteger(expectedValue: BigInteger, length: Int, input: String) {
+        val data = "00 00 00 00 $input".hexStringToByteArray()
+        val value = data.readFixedIntAsBigInteger(4, length)
         assertEquals(expectedValue, value)
     }
 
