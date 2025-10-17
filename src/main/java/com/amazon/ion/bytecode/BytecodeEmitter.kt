@@ -77,4 +77,14 @@ internal object BytecodeEmitter {
         val asLong = double.toRawBits()
         destination.add3(Instructions.I_FLOAT_F64, (asLong ushr 32).toInt(), asLong.toInt())
     }
+
+    @JvmStatic
+    fun emitRefill(destination: BytecodeBuffer) {
+        destination.add(Instructions.I_REFILL)
+    }
+
+    @JvmStatic
+    fun emitEndOfInput(destination: BytecodeBuffer) {
+        destination.add(Instructions.I_END_OF_INPUT)
+    }
 }
